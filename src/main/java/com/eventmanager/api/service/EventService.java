@@ -3,6 +3,7 @@ package com.eventmanager.api.service;
 import com.amazonaws.services.s3.AmazonS3;
 import com.eventmanager.api.domain.event.Event;
 import com.eventmanager.api.domain.event.EventRequestDTO;
+import com.eventmanager.api.repositories.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,9 @@ public class EventService {
     @Autowired
     private AmazonS3 s3Client;
 
+    @Autowired
+    private EventRepository repository;
+
     public Event createEvent(EventRequestDTO data){
         String imgUrl = null;
 
@@ -37,7 +41,10 @@ public class EventService {
         newEvent.setDescription(data.description());
         newEvent.setEventUrl(data.eventUrl());
         newEvent.setDate(new Date(data.date()));
-        newEvent.setImageUrl(imgUrl);
+        newEvent.setImgUrl(imgUrl);
+        newEvent.setRemote(data.remote());
+
+        repository.save(newEvent);
 
         return newEvent;
     }
@@ -52,8 +59,9 @@ public class EventService {
             file.delete();
             return s3Client.getUrl(bucketName, filename).toString();
         }catch (Exception e){
-            System.out.println("Erro ao subir arquivo.");
-            return null;
+            System.err.println("Erro ao subir arquivo. Detalhes:");
+            e.printStackTrace();
+            return "";
         }
     }
 
