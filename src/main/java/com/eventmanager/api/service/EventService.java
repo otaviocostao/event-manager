@@ -54,10 +54,10 @@ public class EventService {
         return newEvent;
     }
 
-    public List<EventResponseDTO> getEvents  (int page, int size){
+    public List<EventResponseDTO> getUpcomingEvents  (int page, int size){
         // PAGINAÇÃO DOS EVENTS
         Pageable pageable = PageRequest.of(page, size);
-        Page<Event> eventPage = this.repository.findAll(pageable);
+        Page<Event> eventPage = this.repository.findUpcomingEvents(new Date(), pageable);
         return eventPage.map(event -> new EventResponseDTO(event.getId(), event.getTitle(), event.getDescription(), event.getDate(), "", "", event.getRemote(), event.getEventUrl(), event.getImgUrl()))
                 .stream().toList();
     }
