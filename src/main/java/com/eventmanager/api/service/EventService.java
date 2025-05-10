@@ -1,7 +1,9 @@
 package com.eventmanager.api.service;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.eventmanager.api.domain.coupon.Coupon;
 import com.eventmanager.api.domain.event.Event;
+import com.eventmanager.api.domain.event.EventDetailsDTO;
 import com.eventmanager.api.domain.event.EventRequestDTO;
 import com.eventmanager.api.domain.event.EventResponseDTO;
 import com.eventmanager.api.repositories.EventRepository;
@@ -20,10 +22,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class EventService {
@@ -39,6 +39,9 @@ public class EventService {
 
     @Autowired
     private AddresService addresService;
+
+    @Autowired
+    private CouponService couponService;
 
     public Event createEvent(EventRequestDTO data){
         String imgUrl = null;
@@ -130,4 +133,29 @@ public class EventService {
         return convFile;
     }
 
+    public EventDetailsDTO getEventDetails(UUID eventId) {
+        Event event = repository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+
+        List<Coupon> coupons = couponService.consultCoupons(eventId, new Date());
+
+        List<EventDetailsDTO.CouponDTO> couponDTOS = coupons.stream()
+                .map(coupon -> new EventDetailsDTO.CouponDTO(
+                        coupon.getCode(),
+                        coupon.getDiscount(),
+                        coupon.getValid())).collect(Collectors.toList());
+
+        return new EventDetailsDTO(
+                event.getId(),
+                event.getTitle(),
+                event.getDescription(),
+                event.getDate(),
+                event.getAddres() != null ? event.getAddres().getCity() : "",
+                event.getAddres() != null ? event.getAddres().getUf() : "",
+                event.getImgUrl(),
+                event.getEventUrl(),
+                couponDTOS
+        );
+
+    }
 }
