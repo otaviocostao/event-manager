@@ -5,6 +5,7 @@ import com.eventmanager.api.domain.event.Event;
 import com.eventmanager.api.domain.event.EventRequestDTO;
 import com.eventmanager.api.domain.event.EventResponseDTO;
 import com.eventmanager.api.repositories.EventRepository;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -33,6 +36,9 @@ public class EventService {
 
     @Autowired
     private EventRepository repository;
+
+    @Autowired
+    private AddresService addresService;
 
     public Event createEvent(EventRequestDTO data){
         String imgUrl = null;
@@ -51,6 +57,10 @@ public class EventService {
 
         repository.save(newEvent);
 
+        if (!data.remote()){
+            this.addresService.createAddres(data, newEvent);
+        }
+
         return newEvent;
     }
 
@@ -58,7 +68,41 @@ public class EventService {
         // PAGINAÇÃO DOS EVENTS
         Pageable pageable = PageRequest.of(page, size);
         Page<Event> eventPage = this.repository.findUpcomingEvents(new Date(), pageable);
-        return eventPage.map(event -> new EventResponseDTO(event.getId(), event.getTitle(), event.getDescription(), event.getDate(), "", "", event.getRemote(), event.getEventUrl(), event.getImgUrl()))
+        return eventPage.map(event -> new EventResponseDTO(
+                        event.getId(),
+                        event.getTitle(),
+                        event.getDescription(),
+                        event.getDate(),
+                        event.getAddres() != null ? event.getAddres().getCity() : "",
+                        event.getAddres() != null ? event.getAddres().getUf() : "",
+                        event.getRemote(),
+                        event.getEventUrl(),
+                        event.getImgUrl()))
+                .stream().toList();
+    }
+
+    public List<EventResponseDTO> getFilteredEvents(int page, int size, String title, String city, String uf, Date startDate, Date endDate) {
+
+        title = (title != null) ? title : "";
+        city = (city != null) ? city : "";
+        uf = (uf != null) ? uf : "";
+        startDate = (startDate != null) ? startDate : new Date();
+        endDate = (endDate != null)
+                ? endDate
+                : Date.from(LocalDate.now().plusYears(10).atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Event> eventsPage = this.repository.findFilteredEvents(title, city, uf, startDate, endDate, pageable);
+        return eventsPage.map(event -> new EventResponseDTO(
+                        event.getId(),
+                        event.getTitle(),
+                        event.getDescription(),
+                        event.getDate(),
+                        event.getAddres() != null ? event.getAddres().getCity() : "",
+                        event.getAddres() != null ? event.getAddres().getUf() : "",
+                        event.getRemote(),
+                        event.getEventUrl(),
+                        event.getImgUrl()))
                 .stream().toList();
     }
 
@@ -85,4 +129,5 @@ public class EventService {
         fos.close();
         return convFile;
     }
+
 }

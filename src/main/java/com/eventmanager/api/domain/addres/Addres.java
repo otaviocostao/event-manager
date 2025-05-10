@@ -21,11 +21,11 @@ public class Addres {
     @GeneratedValue
     private UUID id;
 
-    private String cidade;
+    private String city;
 
     private String uf;
 
     @ManyToOne
-    @JoinColumn(name = "evento_id")
+    @JoinColumn(name = "event_id")
     private Event event;
 }

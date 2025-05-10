@@ -1,9 +1,7 @@
 package com.eventmanager.api.domain.event;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.eventmanager.api.domain.addres.Addres;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,8 +24,13 @@ public class Event {
 
     private String title;
     private String description;
+
+    @Column(length = 500)
     private String imgUrl;
     private String eventUrl;
     private Boolean remote;
     private Date date;
+
+    @OneToOne(mappedBy = "event", cascade = CascadeType.ALL)
+    private Addres addres;
 }
